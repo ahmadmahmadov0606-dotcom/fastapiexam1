@@ -42,3 +42,25 @@ class CartItem(Base):
     quantity:Mapped[int]=mapped_column(Integer,nullable=False)
 
     product=relationship('Product')
+
+
+class Order(Base):
+    __tablename__='orders'
+    id:Mapped[int]=mapped_column(primary_key=True)
+    user_id:Mapped[int]=mapped_column(ForeignKey('users.id'),nullable=False)
+    total:Mapped[float]=mapped_column(Float,nullable=False)
+    status:Mapped[str]=mapped_column(String(20),default='new')
+    created_at:Mapped[datetime]=mapped_column(DateTime,default=datetime.now)
+
+    items=relationship('OrderItem')
+
+
+class OrderItem(Base):
+    __tablename__='order_items'
+    id:Mapped[int]=mapped_column(primary_key=True)
+    order_id:Mapped[int]=mapped_column(ForeignKey('orders.id'),nullable=False)
+    product_id:Mapped[int]=mapped_column(ForeignKey('products.id'),nullable=False)
+    quantity:Mapped[int]=mapped_column(Integer,nullable=False)
+    price:Mapped[float]=mapped_column(Float,nullable=False)
+
+    product=relationship('Product')
