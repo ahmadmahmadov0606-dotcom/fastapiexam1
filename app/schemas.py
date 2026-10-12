@@ -32,3 +32,12 @@ class ProductRead(ProductCreate):
     category:CategoryRead
 
     model_config=ConfigDict(from_attributes=True)
+
+
+class CartAdd(BaseModel):
+    user_id:int
+    product_id:int
+    quantity:int=Field(ge=1)
+
+class CartUpdate(BaseModel):
+    quantity:int=Field(ge=1)
