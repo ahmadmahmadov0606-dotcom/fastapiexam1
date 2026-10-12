@@ -64,3 +64,12 @@ class OrderItem(Base):
     price:Mapped[float]=mapped_column(Float,nullable=False)
 
     product=relationship('Product')
+
+
+class Review(Base):
+    __tablename__='reviews'
+    id:Mapped[int]=mapped_column(primary_key=True)
+    product_id:Mapped[int]=mapped_column(ForeignKey('products.id'),nullable=False)
+    user_id:Mapped[int]=mapped_column(ForeignKey('users.id'),nullable=False)
+    rating:Mapped[int]=mapped_column(Integer,nullable=False)
+    text:Mapped[str]=mapped_column(String(500),nullable=False)
