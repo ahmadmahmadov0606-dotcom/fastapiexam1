@@ -85,3 +85,16 @@ def add_to_cart(db:Session,data:schemas.CartAdd):
         raise HTTPException(status_code=400,detail='Not enough stock')
     db.commit()
     return get_cart(db,data.user_id)
+
+def update_cart_item(db:Session,cart_item_id:int,data:schemas.CartUpdate):
+    item=get_or_404(db,models.CartItem,cart_item_id)
+    if data.quantity>item.product.stock:
+        raise HTTPException(status_code=400,detail='Not enough stock')
+    item.quantity=data.quantity
+    db.commit()
+    return get_cart(db,item.user_id)
+
+def clear_cart(db:Session,user_id:int):
+    db.query(models.CartItem).filter(models.CartItem.user_id==user_id).delete()
+    db.commit()
+    return {'message':'cart cleared'}
