@@ -45,3 +45,24 @@ def user_orders(user_id:int,db:Session=Depends(get_db)):
 @app.get('/users/{user_id}/statistics/')
 def user_statistics(user_id:int,db:Session=Depends(get_db)):
     return crud.user_statistics(db,user_id)
+
+
+@app.post('/categories/',response_model=schemas.CategoryRead)
+def create_category(data:schemas.CategoryCreate,db:Session=Depends(get_db)):
+    return crud.create(db,models.Category(**data.model_dump()))
+
+@app.get('/categories/',response_model=list[schemas.CategoryRead])
+def get_categories(db:Session=Depends(get_db)):
+    return db.query(models.Category).all()
+
+@app.get('/categories/{category_id}',response_model=schemas.CategoryRead)
+def get_category(category_id:int,db:Session=Depends(get_db)):
+    return crud.get_or_404(db,models.Category,category_id)
+
+@app.put('/categories/{category_id}',response_model=schemas.CategoryRead)
+def update_category(category_id:int,data:schemas.CategoryCreate,db:Session=Depends(get_db)):
+    return crud.update(db,crud.get_or_404(db,models.Category,category_id),data)
+
+@app.delete('/categories/{category_id}')
+def delete_category(category_id:int,db:Session=Depends(get_db)):
+    return crud.delete(db,crud.get_or_404(db,models.Category,category_id))
