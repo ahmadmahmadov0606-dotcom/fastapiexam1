@@ -118,3 +118,25 @@ def create_order(db:Session,data:schemas.OrderCreate):
         item.product.stock-=item.quantity
         db.delete(item)
     return create(db,order)
+
+def get_orders(db:Session,status,sort_by,skip,limit):
+    query=db.query(models.Order)
+    if status:
+        query=query.filter(models.Order.status==status)
+    if sort_by=='total':
+        query=query.order_by(models.Order.total)
+    if sort_by=='date':
+        query=query.order_by(models.Order.created_at)
+    return query.offset(skip).limit(limit).all()
+
+def change_status(db:Session,order_id:int,data:schemas.OrderStatus):
+    order=get_or_404(db,models.Order,order_id)
+    if order.status=='cancelled':
+        raise HTTPException(status_code=400,detail='Order is cancelled')
+    if data.status=='cancelled':
+        for item in order.items:
+            item.product.stock+=item.quantity
+    order.status=data.status
+    db.commit()
+    db.refresh(order)
+    return order
