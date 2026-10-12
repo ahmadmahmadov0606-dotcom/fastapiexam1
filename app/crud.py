@@ -27,3 +27,12 @@ def delete(db:Session,obj):
     db.delete(obj)
     db.commit()
     return {'message':'deleted'}
+
+
+def user_statistics(db:Session,user_id:int):
+    user=get_or_404(db,models.User,user_id)
+    orders=[o for o in user.orders if o.status!='cancelled']
+    return {
+        'orders_count':len(orders),
+        'total_spent':sum(o.total for o in orders)
+    }
