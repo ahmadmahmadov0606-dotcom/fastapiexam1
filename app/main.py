@@ -38,13 +38,6 @@ def update_user(user_id:int,data:schemas.UserCreate,db:Session=Depends(get_db)):
 def delete_user(user_id:int,db:Session=Depends(get_db)):
     return crud.delete(db,crud.get_or_404(db,models.User,user_id))
 
-@app.get('/users/{user_id}/orders/',tags=['Users'],response_model=list[schemas.OrderRead])
-def user_orders(user_id:int,db:Session=Depends(get_db)):
-    return crud.get_or_404(db,models.User,user_id).orders
-
-@app.get('/users/{user_id}/statistics/',tags=['Users'])
-def user_statistics(user_id:int,db:Session=Depends(get_db)):
-    return crud.user_statistics(db,user_id)
 
 
 @app.post('/categories/',tags=['Categories'],response_model=schemas.CategoryRead)
@@ -149,14 +142,47 @@ def get_orders(
 def get_order(order_id:int,db:Session=Depends(get_db)):
     return crud.get_or_404(db,models.Order,order_id)
 
-@app.put('/orders/{order_id}',tags=['Orders'],response_model=schemas.OrderRead)
-def change_status(order_id:int,data:schemas.OrderStatus,db:Session=Depends(get_db)):
-    return crud.change_status(db,order_id,data)
+@app.put('/orders/{order_id}/status/',tags=['Orders'],response_model=schemas.OrderRead)
+def order_status(order_id:int,data:schemas.OrderStatus,db:Session=Depends(get_db)):
+    return crud.change_status(db,order_id,data.status)
+
+@app.post('/orders/{order_id}/cancel/',tags=['Orders'],response_model=schemas.OrderRead)
+def order_cancel(order_id:int,db:Session=Depends(get_db)):
+    return crud.change_status(db,order_id,'cancelled')
 
 
-@app.get('/statistics/',tags=['Statistics'])
-def statistics(db:Session=Depends(get_db)):
-    return crud.statistics(db)
+@app.get('/users/{user_id}/orders/',tags=['Purchase history'],response_model=list[schemas.OrderRead])
+def user_orders(user_id:int,db:Session=Depends(get_db)):
+    return crud.get_or_404(db,models.User,user_id).orders
+
+@app.get('/users/{user_id}/purchases/',tags=['Purchase history'])
+def user_purchases(user_id:int,db:Session=Depends(get_db)):
+    return crud.user_purchases(db,user_id)
+
+@app.get('/users/{user_id}/orders/last/',tags=['Purchase history'],response_model=schemas.OrderRead)
+def user_last_order(user_id:int,db:Session=Depends(get_db)):
+    return crud.last_order(db,user_id)
+
+@app.get('/users/{user_id}/orders/most-expensive/',tags=['Purchase history'],response_model=schemas.OrderRead)
+def user_most_expensive_order(user_id:int,db:Session=Depends(get_db)):
+    return crud.most_expensive_order(db,user_id)
+
+@app.get('/users/{user_id}/total-spent/',tags=['Purchase history'])
+def user_total_spent(user_id:int,db:Session=Depends(get_db)):
+    return {'total_spent':crud.user_statistics(db,user_id)['total_spent']}
+
+@app.get('/users/{user_id}/orders-count/',tags=['Purchase history'])
+def user_orders_count(user_id:int,db:Session=Depends(get_db)):
+    return {'orders_count':crud.user_statistics(db,user_id)['orders_count']}
+
+@app.get('/users/{user_id}/products/',tags=['Purchase history'])
+def user_products(user_id:int,db:Session=Depends(get_db)):
+    return crud.user_products(db,user_id)
+
+@app.get('/users/{user_id}/products/{product_id}/',tags=['Purchase history'])
+def user_product_count(user_id:int,product_id:int,db:Session=Depends(get_db)):
+    product=crud.get_or_404(db,models.Product,product_id)
+    return {'product':product.name,'count':crud.user_products(db,user_id).get(product.name,0)}
 
 
 @app.post('/favorites/',tags=['Favorites'],response_model=schemas.FavoriteRead)
@@ -167,6 +193,21 @@ def add_favorite(data:schemas.FavoriteCreate,db:Session=Depends(get_db)):
 def get_favorites(user_id:int,db:Session=Depends(get_db)):
     return crud.get_or_404(db,models.User,user_id).favorites
 
-@app.delete('/favorites/{favorite_id}',tags=['Favorites'])
-def delete_favorite(favorite_id:int,db:Session=Depends(get_db)):
-    return crud.delete(db,crud.get_or_404(db,models.Favorite,favorite_id))
+@app.get('/favorites/{user_id}/{product_id}',tags=['Favorites'])
+def favorite_check(user_id:int,product_id:int,db:Session=Depends(get_db)):
+    if crud.is_favorite(db,user_id,product_id):
+        return {'is_favorite':True}
+    return {'is_favorite':False}
+
+@app.delete('/favorites/{user_id}/{product_id}',tags=['Favorites'])
+def favorite_delete(user_id:int,product_id:int,db:Session=Depends(get_db)):
+    return crud.delete_favorite(db,user_id,product_id)
+
+
+@app.get('/users/{user_id}/statistics/',tags=['Statistics'])
+def user_statistics(user_id:int,db:Session=Depends(get_db)):
+    return crud.user_statistics(db,user_id)
+
+@app.get('/statistics/',tags=['Statistics'])
+def statistics(db:Session=Depends(get_db)):
+    return crud.statistics(db)

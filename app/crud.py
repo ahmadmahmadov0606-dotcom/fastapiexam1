@@ -59,6 +59,36 @@ def user_statistics(db:Session,user_id:int):
     return {'orders_count':count,'total_spent':total}
 
 
+def user_purchases(db:Session,user_id:int):
+    user=get_or_404(db,models.User,user_id)
+    result=[]
+    for order in user.orders:
+        if order.status!='cancelled':
+            for item in order.items:
+                result.append({'order_id':order.id,'product':item.product.name,'quantity':item.quantity,'price':item.price})
+    return result
+
+def user_products(db:Session,user_id:int):
+    products={}
+    for item in user_purchases(db,user_id):
+        products[item['product']]=products.get(item['product'],0)+item['quantity']
+    return products
+
+def last_order(db:Session,user_id:int):
+    get_or_404(db,models.User,user_id)
+    order=db.query(models.Order).filter_by(user_id=user_id).order_by(models.Order.created_at.desc()).first()
+    if not order:
+        raise HTTPException(status_code=404,detail='No orders')
+    return order
+
+def most_expensive_order(db:Session,user_id:int):
+    get_or_404(db,models.User,user_id)
+    order=db.query(models.Order).filter_by(user_id=user_id).order_by(models.Order.total.desc()).first()
+    if not order:
+        raise HTTPException(status_code=404,detail='No orders')
+    return order
+
+
 def get_products(db:Session,search,category_id,min_price,max_price,sort_by,skip,limit):
     query=db.query(models.Product)
     if search:
@@ -140,16 +170,16 @@ def get_orders(db:Session,status,sort_by,skip,limit):
         query=query.order_by(models.Order.created_at)
     return query.offset(skip).limit(limit).all()
 
-def change_status(db:Session,order_id:int,data:schemas.OrderStatus):
+def change_status(db:Session,order_id:int,status:str):
     order=get_or_404(db,models.Order,order_id)
-    if data.status not in ['new','paid','cancelled']:
+    if status not in ['new','paid','cancelled']:
         raise HTTPException(status_code=400,detail='Wrong status')
     if order.status=='cancelled':
         raise HTTPException(status_code=400,detail='Order is cancelled')
-    if data.status=='cancelled':
+    if status=='cancelled':
         for item in order.items:
             item.product.stock+=item.quantity
-    order.status=data.status
+    order.status=status
     db.commit()
     db.refresh(order)
     return order
@@ -166,9 +196,19 @@ def delete_product(db:Session,product_id:int):
 def add_favorite(db:Session,data:schemas.FavoriteCreate):
     get_or_404(db,models.User,data.user_id)
     get_or_404(db,models.Product,data.product_id)
-    if db.query(models.Favorite).filter_by(user_id=data.user_id,product_id=data.product_id).first():
+    if is_favorite(db,data.user_id,data.product_id):
         raise HTTPException(status_code=400,detail='Already in favorites')
     return create(db,models.Favorite(**data.model_dump()))
+
+
+def is_favorite(db:Session,user_id:int,product_id:int):
+    return db.query(models.Favorite).filter_by(user_id=user_id,product_id=product_id).first()
+
+def delete_favorite(db:Session,user_id:int,product_id:int):
+    favorite=is_favorite(db,user_id,product_id)
+    if not favorite:
+        raise HTTPException(status_code=404,detail='Not found')
+    return delete(db,favorite)
 
 
 def statistics(db:Session):
