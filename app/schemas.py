@@ -77,3 +77,14 @@ class ReviewRead(ReviewCreate):
     product_id:int
 
     model_config=ConfigDict(from_attributes=True)
+
+
+class FavoriteCreate(BaseModel):
+    user_id:int
+    product_id:int
+
+class FavoriteRead(BaseModel):
+    id:int
+    product:ProductRead
+
+    model_config=ConfigDict(from_attributes=True)
