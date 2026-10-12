@@ -153,3 +153,16 @@ def get_order(order_id:int,db:Session=Depends(get_db)):
 @app.put('/orders/{order_id}',response_model=schemas.OrderRead)
 def change_status(order_id:int,data:schemas.OrderStatus,db:Session=Depends(get_db)):
     return crud.change_status(db,order_id,data)
+
+
+@app.post('/favorites/',response_model=schemas.FavoriteRead)
+def add_favorite(data:schemas.FavoriteCreate,db:Session=Depends(get_db)):
+    return crud.add_favorite(db,data)
+
+@app.get('/favorites/{user_id}',response_model=list[schemas.FavoriteRead])
+def get_favorites(user_id:int,db:Session=Depends(get_db)):
+    return crud.get_or_404(db,models.User,user_id).favorites
+
+@app.delete('/favorites/{favorite_id}')
+def delete_favorite(favorite_id:int,db:Session=Depends(get_db)):
+    return crud.delete(db,crud.get_or_404(db,models.Favorite,favorite_id))
