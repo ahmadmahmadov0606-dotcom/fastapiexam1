@@ -65,3 +65,15 @@ class OrderRead(BaseModel):
     items:list[OrderItemRead]
 
     model_config=ConfigDict(from_attributes=True)
+
+
+class ReviewCreate(BaseModel):
+    user_id:int
+    rating:int=Field(ge=1,le=5)
+    text:str
+
+class ReviewRead(ReviewCreate):
+    id:int
+    product_id:int
+
+    model_config=ConfigDict(from_attributes=True)
