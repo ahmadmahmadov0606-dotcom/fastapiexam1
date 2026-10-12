@@ -53,3 +53,35 @@ def get_products(db:Session,search,category_id,min_price,max_price,sort_by,skip,
     if sort_by=='name':
         query=query.order_by(models.Product.name)
     return query.offset(skip).limit(limit).all()
+
+
+def get_cart(db:Session,user_id:int):
+    get_or_404(db,models.User,user_id)
+    items=db.query(models.CartItem).filter(models.CartItem.user_id==user_id).all()
+    result=[]
+    for item in items:
+        result.append({
+            'id':item.id,
+            'product':item.product.name,
+            'price':item.product.price,
+            'quantity':item.quantity,
+            'subtotal':item.product.price*item.quantity
+        })
+    return {'items':result,'total':sum(i['subtotal'] for i in result)}
+
+def add_to_cart(db:Session,data:schemas.CartAdd):
+    get_or_404(db,models.User,data.user_id)
+    product=get_or_404(db,models.Product,data.product_id)
+    item=db.query(models.CartItem).filter(
+        models.CartItem.user_id==data.user_id,
+        models.CartItem.product_id==data.product_id
+    ).first()
+    if item:
+        item.quantity+=data.quantity
+    else:
+        item=models.CartItem(**data.model_dump())
+        db.add(item)
+    if item.quantity>product.stock:
+        raise HTTPException(status_code=400,detail='Not enough stock')
+    db.commit()
+    return get_cart(db,data.user_id)
