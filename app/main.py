@@ -109,3 +109,47 @@ def create_review(product_id:int,data:schemas.ReviewCreate,db:Session=Depends(ge
 @app.get('/products/{product_id}/reviews/',response_model=list[schemas.ReviewRead])
 def get_reviews(product_id:int,db:Session=Depends(get_db)):
     return crud.get_or_404(db,models.Product,product_id).reviews
+
+
+@app.post('/cart/add/')
+def add_to_cart(data:schemas.CartAdd,db:Session=Depends(get_db)):
+    return crud.add_to_cart(db,data)
+
+@app.get('/cart/{user_id}')
+def get_cart(user_id:int,db:Session=Depends(get_db)):
+    return crud.get_cart(db,user_id)
+
+@app.put('/cart/items/{cart_item_id}')
+def update_cart_item(cart_item_id:int,data:schemas.CartUpdate,db:Session=Depends(get_db)):
+    return crud.update_cart_item(db,cart_item_id,data)
+
+@app.delete('/cart/items/{cart_item_id}')
+def delete_cart_item(cart_item_id:int,db:Session=Depends(get_db)):
+    return crud.delete(db,crud.get_or_404(db,models.CartItem,cart_item_id))
+
+@app.delete('/cart/clear/{user_id}')
+def clear_cart(user_id:int,db:Session=Depends(get_db)):
+    return crud.clear_cart(db,user_id)
+
+
+@app.post('/orders/create/',response_model=schemas.OrderRead)
+def create_order(data:schemas.OrderCreate,db:Session=Depends(get_db)):
+    return crud.create_order(db,data)
+
+@app.get('/orders/',response_model=list[schemas.OrderRead])
+def get_orders(
+    status:str|None=None,
+    sort_by:str|None=None,
+    skip:int=0,
+    limit:int=10,
+    db:Session=Depends(get_db)
+):
+    return crud.get_orders(db,status,sort_by,skip,limit)
+
+@app.get('/orders/{order_id}',response_model=schemas.OrderRead)
+def get_order(order_id:int,db:Session=Depends(get_db)):
+    return crud.get_or_404(db,models.Order,order_id)
+
+@app.put('/orders/{order_id}',response_model=schemas.OrderRead)
+def change_status(order_id:int,data:schemas.OrderStatus,db:Session=Depends(get_db)):
+    return crud.change_status(db,order_id,data)
