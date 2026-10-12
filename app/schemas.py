@@ -41,3 +41,27 @@ class CartAdd(BaseModel):
 
 class CartUpdate(BaseModel):
     quantity:int=Field(ge=1)
+
+
+class OrderCreate(BaseModel):
+    user_id:int
+
+class OrderStatus(BaseModel):
+    status:str=Field(pattern='^(new|paid|cancelled)$')
+
+class OrderItemRead(BaseModel):
+    quantity:int
+    price:float
+    product:ProductRead
+
+    model_config=ConfigDict(from_attributes=True)
+
+class OrderRead(BaseModel):
+    id:int
+    user_id:int
+    total:float
+    status:str
+    created_at:datetime
+    items:list[OrderItemRead]
+
+    model_config=ConfigDict(from_attributes=True)
