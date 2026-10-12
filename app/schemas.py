@@ -47,7 +47,7 @@ class OrderCreate(BaseModel):
     user_id:int
 
 class OrderStatus(BaseModel):
-    status:str=Field(pattern='^(new|paid|cancelled)$')
+    status:str
 
 class OrderItemRead(BaseModel):
     quantity:int

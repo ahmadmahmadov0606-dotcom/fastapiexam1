@@ -16,12 +16,31 @@ def create(db:Session,obj):
     db.refresh(obj)
     return obj
 
-def update(db:Session,obj,data):
-    for key,value in data.model_dump().items():
-        setattr(obj,key,value)
+def update_user(db:Session,user_id:int,data:schemas.UserCreate):
+    user=get_or_404(db,models.User,user_id)
+    user.name=data.name
+    user.email=data.email
     db.commit()
-    db.refresh(obj)
-    return obj
+    db.refresh(user)
+    return user
+
+def update_category(db:Session,category_id:int,data:schemas.CategoryCreate):
+    category=get_or_404(db,models.Category,category_id)
+    category.name=data.name
+    db.commit()
+    db.refresh(category)
+    return category
+
+def update_product(db:Session,product_id:int,data:schemas.ProductCreate):
+    product=get_or_404(db,models.Product,product_id)
+    get_or_404(db,models.Category,data.category_id)
+    product.name=data.name
+    product.price=data.price
+    product.stock=data.stock
+    product.category_id=data.category_id
+    db.commit()
+    db.refresh(product)
+    return product
 
 def delete(db:Session,obj):
     db.delete(obj)
@@ -31,11 +50,13 @@ def delete(db:Session,obj):
 
 def user_statistics(db:Session,user_id:int):
     user=get_or_404(db,models.User,user_id)
-    orders=[o for o in user.orders if o.status!='cancelled']
-    return {
-        'orders_count':len(orders),
-        'total_spent':sum(o.total for o in orders)
-    }
+    count=0
+    total=0
+    for order in user.orders:
+        if order.status!='cancelled':
+            count+=1
+            total+=order.total
+    return {'orders_count':count,'total_spent':total}
 
 
 def get_products(db:Session,search,category_id,min_price,max_price,sort_by,skip,limit):
@@ -59,6 +80,7 @@ def get_cart(db:Session,user_id:int):
     get_or_404(db,models.User,user_id)
     items=db.query(models.CartItem).filter(models.CartItem.user_id==user_id).all()
     result=[]
+    total=0
     for item in items:
         result.append({
             'id':item.id,
@@ -67,7 +89,8 @@ def get_cart(db:Session,user_id:int):
             'quantity':item.quantity,
             'subtotal':item.product.price*item.quantity
         })
-    return {'items':result,'total':sum(i['subtotal'] for i in result)}
+        total+=item.product.price*item.quantity
+    return {'items':result,'total':total}
 
 def add_to_cart(db:Session,data:schemas.CartAdd):
     get_or_404(db,models.User,data.user_id)
@@ -131,6 +154,8 @@ def get_orders(db:Session,status,sort_by,skip,limit):
 
 def change_status(db:Session,order_id:int,data:schemas.OrderStatus):
     order=get_or_404(db,models.Order,order_id)
+    if data.status not in ['new','paid','cancelled']:
+        raise HTTPException(status_code=400,detail='Wrong status')
     if order.status=='cancelled':
         raise HTTPException(status_code=400,detail='Order is cancelled')
     if data.status=='cancelled':

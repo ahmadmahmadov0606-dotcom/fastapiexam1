@@ -32,7 +32,7 @@ def get_user(user_id:int,db:Session=Depends(get_db)):
 
 @app.put('/users/{user_id}',response_model=schemas.UserRead)
 def update_user(user_id:int,data:schemas.UserCreate,db:Session=Depends(get_db)):
-    return crud.update(db,crud.get_or_404(db,models.User,user_id),data)
+    return crud.update_user(db,user_id,data)
 
 @app.delete('/users/{user_id}')
 def delete_user(user_id:int,db:Session=Depends(get_db)):
@@ -61,7 +61,7 @@ def get_category(category_id:int,db:Session=Depends(get_db)):
 
 @app.put('/categories/{category_id}',response_model=schemas.CategoryRead)
 def update_category(category_id:int,data:schemas.CategoryCreate,db:Session=Depends(get_db)):
-    return crud.update(db,crud.get_or_404(db,models.Category,category_id),data)
+    return crud.update_category(db,category_id,data)
 
 @app.delete('/categories/{category_id}')
 def delete_category(category_id:int,db:Session=Depends(get_db)):
@@ -92,8 +92,7 @@ def get_product(product_id:int,db:Session=Depends(get_db)):
 
 @app.put('/products/{product_id}',response_model=schemas.ProductRead)
 def update_product(product_id:int,data:schemas.ProductCreate,db:Session=Depends(get_db)):
-    crud.get_or_404(db,models.Category,data.category_id)
-    return crud.update(db,crud.get_or_404(db,models.Product,product_id),data)
+    return crud.update_product(db,product_id,data)
 
 @app.delete('/products/{product_id}')
 def delete_product(product_id:int,db:Session=Depends(get_db)):
