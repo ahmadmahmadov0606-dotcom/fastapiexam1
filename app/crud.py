@@ -36,3 +36,20 @@ def user_statistics(db:Session,user_id:int):
         'orders_count':len(orders),
         'total_spent':sum(o.total for o in orders)
     }
+
+
+def get_products(db:Session,search,category_id,min_price,max_price,sort_by,skip,limit):
+    query=db.query(models.Product)
+    if search:
+        query=query.filter(models.Product.name.ilike(f'%{search}%'))
+    if category_id:
+        query=query.filter(models.Product.category_id==category_id)
+    if min_price:
+        query=query.filter(models.Product.price>=min_price)
+    if max_price:
+        query=query.filter(models.Product.price<=max_price)
+    if sort_by=='price':
+        query=query.order_by(models.Product.price)
+    if sort_by=='name':
+        query=query.order_by(models.Product.name)
+    return query.offset(skip).limit(limit).all()
