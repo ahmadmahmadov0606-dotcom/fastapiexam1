@@ -169,3 +169,33 @@ def add_favorite(db:Session,data:schemas.FavoriteCreate):
     if db.query(models.Favorite).filter_by(user_id=data.user_id,product_id=data.product_id).first():
         raise HTTPException(status_code=400,detail='Already in favorites')
     return create(db,models.Favorite(**data.model_dump()))
+
+
+def statistics(db:Session):
+    products=db.query(models.Product).all()
+    orders=db.query(models.Order).filter(models.Order.status!='cancelled').all()
+    total=0
+    sold={}
+    spent={}
+    for order in orders:
+        total+=order.total
+        spent[order.user_id]=spent.get(order.user_id,0)+order.total
+        for item in order.items:
+            sold[item.product.name]=sold.get(item.product.name,0)+item.quantity
+    low_stock=[]
+    for product in products:
+        if product.stock<5:
+            low_stock.append(product.name)
+    return {
+        'users_count':db.query(models.User).count(),
+        'products_count':len(products),
+        'categories_count':db.query(models.Category).count(),
+        'orders_count':len(orders),
+        'total_sum':total,
+        'average_order':total/len(orders) if orders else 0,
+        'best_selling_product':max(sold,key=sold.get) if sold else None,
+        'most_expensive_product':max(products,key=lambda p:p.price).name if products else None,
+        'cheapest_product':min(products,key=lambda p:p.price).name if products else None,
+        'low_stock_products':low_stock,
+        'top_user_id':max(spent,key=spent.get) if spent else None
+    }

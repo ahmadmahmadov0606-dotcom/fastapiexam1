@@ -154,6 +154,11 @@ def change_status(order_id:int,data:schemas.OrderStatus,db:Session=Depends(get_d
     return crud.change_status(db,order_id,data)
 
 
+@app.get('/statistics/',tags=['Statistics'])
+def statistics(db:Session=Depends(get_db)):
+    return crud.statistics(db)
+
+
 @app.post('/favorites/',tags=['Favorites'],response_model=schemas.FavoriteRead)
 def add_favorite(data:schemas.FavoriteCreate,db:Session=Depends(get_db)):
     return crud.add_favorite(db,data)
