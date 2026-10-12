@@ -98,3 +98,23 @@ def clear_cart(db:Session,user_id:int):
     db.query(models.CartItem).filter(models.CartItem.user_id==user_id).delete()
     db.commit()
     return {'message':'cart cleared'}
+
+
+def create_order(db:Session,data:schemas.OrderCreate):
+    get_or_404(db,models.User,data.user_id)
+    items=db.query(models.CartItem).filter(models.CartItem.user_id==data.user_id).all()
+    if not items:
+        raise HTTPException(status_code=400,detail='Cart is empty')
+    order=models.Order(user_id=data.user_id,total=0)
+    for item in items:
+        if item.quantity>item.product.stock:
+            raise HTTPException(status_code=400,detail='Not enough stock')
+        order.items.append(models.OrderItem(
+            product_id=item.product_id,
+            quantity=item.quantity,
+            price=item.product.price
+        ))
+        order.total+=item.product.price*item.quantity
+        item.product.stock-=item.quantity
+        db.delete(item)
+    return create(db,order)
