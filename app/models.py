@@ -32,3 +32,13 @@ class Product(Base):
 
     category=relationship('Category',back_populates='products')
     reviews=relationship('Review')
+
+
+class CartItem(Base):
+    __tablename__='cart_items'
+    id:Mapped[int]=mapped_column(primary_key=True)
+    user_id:Mapped[int]=mapped_column(ForeignKey('users.id'),nullable=False)
+    product_id:Mapped[int]=mapped_column(ForeignKey('products.id'),nullable=False)
+    quantity:Mapped[int]=mapped_column(Integer,nullable=False)
+
+    product=relationship('Product')
