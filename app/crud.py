@@ -151,3 +151,15 @@ def delete_product(db:Session,product_id:int):
     if active:
         raise HTTPException(status_code=400,detail='Product is in active order')
     return delete(db,product)
+
+
+def add_favorite(db:Session,data:schemas.FavoriteCreate):
+    get_or_404(db,models.User,data.user_id)
+    get_or_404(db,models.Product,data.product_id)
+    exists=db.query(models.Favorite).filter(
+        models.Favorite.user_id==data.user_id,
+        models.Favorite.product_id==data.product_id
+    ).first()
+    if exists:
+        raise HTTPException(status_code=400,detail='Already in favorites')
+    return create(db,models.Favorite(**data.model_dump()))
