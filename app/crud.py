@@ -214,28 +214,59 @@ def delete_favorite(db:Session,user_id:int,product_id:int):
 def statistics(db:Session):
     products=db.query(models.Product).all()
     orders=db.query(models.Order).filter(models.Order.status!='cancelled').all()
+
+    expensive=None
+    cheap=None
+    max_price=0
+    min_price=0
+    low_stock=[]
+    for product in products:
+        if expensive is None or product.price>max_price:
+            max_price=product.price
+            expensive=product.name
+        if cheap is None or product.price<min_price:
+            min_price=product.price
+            cheap=product.name
+        if product.stock<5:
+            low_stock.append(product.name)
+
     total=0
     sold={}
     spent={}
     for order in orders:
         total+=order.total
-        spent[order.user_id]=spent.get(order.user_id,0)+order.total
+        if order.user_id not in spent:
+            spent[order.user_id]=0
+        spent[order.user_id]+=order.total
         for item in order.items:
-            sold[item.product.name]=sold.get(item.product.name,0)+item.quantity
-    low_stock=[]
-    for product in products:
-        if product.stock<5:
-            low_stock.append(product.name)
+            if item.product.name not in sold:
+                sold[item.product.name]=0
+            sold[item.product.name]+=item.quantity
+
+    best_product=None
+    for name in sold:
+        if best_product is None or sold[name]>sold[best_product]:
+            best_product=name
+
+    top_user=None
+    for user_id in spent:
+        if top_user is None or spent[user_id]>spent[top_user]:
+            top_user=user_id
+
+    average=0
+    if orders:
+        average=total/len(orders)
+
     return {
         'users_count':db.query(models.User).count(),
         'products_count':len(products),
         'categories_count':db.query(models.Category).count(),
         'orders_count':len(orders),
         'total_sum':total,
-        'average_order':total/len(orders) if orders else 0,
-        'best_selling_product':max(sold,key=sold.get) if sold else None,
-        'most_expensive_product':max(products,key=lambda p:p.price).name if products else None,
-        'cheapest_product':min(products,key=lambda p:p.price).name if products else None,
+        'average_order':average,
+        'best_selling_product':best_product,
+        'most_expensive_product':expensive,
+        'cheapest_product':cheap,
         'low_stock_products':low_stock,
-        'top_user_id':max(spent,key=spent.get) if spent else None
+        'top_user_id':top_user
     }
