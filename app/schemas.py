@@ -10,3 +10,12 @@ class UserRead(UserCreate):
     id:int
 
     model_config=ConfigDict(from_attributes=True)
+
+
+class CategoryCreate(BaseModel):
+    name:str
+
+class CategoryRead(CategoryCreate):
+    id:int
+
+    model_config=ConfigDict(from_attributes=True)
