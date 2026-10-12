@@ -73,3 +73,12 @@ class Review(Base):
     user_id:Mapped[int]=mapped_column(ForeignKey('users.id'),nullable=False)
     rating:Mapped[int]=mapped_column(Integer,nullable=False)
     text:Mapped[str]=mapped_column(String(500),nullable=False)
+
+
+class Favorite(Base):
+    __tablename__='favorites'
+    id:Mapped[int]=mapped_column(primary_key=True)
+    user_id:Mapped[int]=mapped_column(ForeignKey('users.id'),nullable=False)
+    product_id:Mapped[int]=mapped_column(ForeignKey('products.id'),nullable=False)
+
+    product=relationship('Product')
