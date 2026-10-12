@@ -140,3 +140,14 @@ def change_status(db:Session,order_id:int,data:schemas.OrderStatus):
     db.commit()
     db.refresh(order)
     return order
+
+
+def delete_product(db:Session,product_id:int):
+    product=get_or_404(db,models.Product,product_id)
+    active=db.query(models.OrderItem).join(models.Order).filter(
+        models.OrderItem.product_id==product_id,
+        models.Order.status=='new'
+    ).first()
+    if active:
+        raise HTTPException(status_code=400,detail='Product is in active order')
+    return delete(db,product)
